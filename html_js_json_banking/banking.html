@@ -18,10 +18,13 @@
                 <div class="container-fluid">
                     <h2>List of customers</h2>
                     <div class="d-flex">
-                        <button class="btn btn-outline-light" id="btnShowModalTransferInfo">
-                            <i class="fas fa-history"></i>
-                            Transfer histories
-                        </button>
+                        <a href="history.html">
+                            <button class="btn btn-outline-light" id="btnShowModalTransferInfo">
+                                <i class="fas fa-history"></i>
+                                Transfer histories
+                            </button>
+                        </a>
+                        
                         <button class="btn btn-outline-light" id="btnShowModalCreate">
                             <i class="fas fa-user-plus"></i>
                             Add New Customer
@@ -290,7 +293,7 @@
     </div>
 
     <!-- Modal Transfer Info-->
-    <div class="modal fade" id="modalTransferInfo">
+    <!-- <div class="modal fade" id="modalTransferInfo">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
@@ -320,7 +323,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
 </body>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -385,10 +388,10 @@
     const totalAmountTr = $('#totalAmount');
 
     let persons = [];
-    let histories = [];
-    const strBodyHistory = $("#history-body");
-    const btnHistory = $('#btnShowModalTransferInfo');
-    const modalHistory = $('#modalTransferInfo');
+    // let histories = [];
+    // const strBodyHistory = $("#history-body");
+    // const btnHistory = $('#btnShowModalTransferInfo');
+    // const modalHistory = $('#modalTransferInfo');
 
     const renderNameRecipient = (obj) => {
         return `
@@ -397,22 +400,63 @@
     }
 
     async function getAllPersons() {
-        const response = await fetch("http://localhost:3300/persons");
-        persons = await response.json();
-        persons.forEach(item => {
-            const str = renderPerson(item);
-            strBody.append(str);
+        // const response = await fetch("http://localhost:3300/persons");
+        // persons = await response.json();
+        // persons.forEach(item => {
+        //     const str = renderPerson(item);
+        //     strBody.append(str);
 
-        });
+        // });
+
+        return $.ajax({
+            type: 'GET',
+            url: 'http://localhost:3300/persons',
+            success: function (response) {
+                persons = response;
+                strBody.empty();
+
+                $.each(response, (index, item) => {
+                    const str = renderPerson(item);
+                    strBody.append(str);
+                })
+            }, error: function () {
+                webToast.Danger({
+                    status: 'Lỗi hệ thống',
+                    message: '',
+                    delay: 2000,
+                    align: 'topright'
+                });
+            }
+        })
     }
 
     async function getAllHistories() {
-        const historiesRes = await fetch('http://localhost:3300/histories');
-        histories = await historiesRes.json();
-        histories.forEach(item => {
-            const str = renderHistory(item);
-            strBodyHistory.append(str);
+        // const historiesRes = await fetch('http://localhost:3300/histories');
+        // histories = await historiesRes.json();
+        // histories.forEach(item => {
+        //     const str = renderHistory(item);
+        //     strBodyHistory.append(str);
 
+        // })
+
+        return $.ajax({
+            type: 'GET',
+            url: 'http://localhost:3300/histories',
+            success: function (response) {
+                histories = response;
+
+                $.each(response, (index, item) => {
+                    const str = renderHistory(item);
+                    strBodyHistory.append(str);
+                })
+            }, error: function () {
+                webToast.Danger({
+                    status: 'Lỗi hệ thống',
+                    message: '',
+                    delay: 2000,
+                    align: 'topright'
+                });
+            }
         })
     }
 
@@ -472,6 +516,14 @@
 
     const createPerson = async () => {
         btnCreate.attr('disabled', true);
+
+        let load = webToast.loading({
+            status: 'Loading...',
+            message: 'Please Wait a moment',
+            align: 'bottomright',
+            line: true,
+        });
+
         let person = {
             "id": null,
             "fullName": fullNameCre.val(),
@@ -481,57 +533,132 @@
             "balance": 0
         };
 
-        const response = await fetch('http://localhost:3300/persons', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(person)
-        })
+        setTimeout(() => {
+            $.ajax({
+                headers: {
+                    'accept': 'application/json',
+                    'content-type': 'application/json'
+                },
+                type: 'POST',
+                url: 'http://localhost:3300/persons',
+                data: JSON.stringify(person)
+            })
+                .done((data) => {
+                    getAllPersons();
+                    webToast.Success({
+                        status: 'Thêm thành công',
+                        message: '',
+                        delay: 2000,
+                        align: 'topright'
+                    });
 
-        const personNew = await response.json();
-        const str = renderPerson(personNew);
-        strBody.append(str);
+                })
+                .fail((error) => {
+                    console.log(error);
+                })
+                .always(() => {
+                    btnCreate.attr('disabled', false);
 
-        webToast.Success({
-            status: 'Thêm thành công',
-            message: '',
-            delay: 2000,
-            align: 'topright'
-        });
+                    modalCreate.modal('hide');
 
-        btnCreate.attr('disabled', false);
-        modalCreate.modal('hide');
+                    load.remove();
+                })
+        }, 2000);
+
+
+
+        // const response = await fetch('http://localhost:3300/persons', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(person)
+        // })
+
+        // const personNew = await response.json();
+        // const str = renderPerson(personNew);
+        // // strBody.append(str);
+        // refreshData();
+
+        // webToast.Success({
+        //     status: 'Thêm thành công',
+        //     message: '',
+        //     delay: 2000,
+        //     align: 'topright'
+        // });
+
+        // btnCreate.attr('disabled', false);
+
+        // modalCreate.modal('hide');
     }
 
     const deletePerson = () => {
         strBody.on('click', '.delete', function () {
             const id = $(this).data('id');
-            console.log(id);
+
             var confirmBox = webToast.confirm("Are you sure you want to delete??");
             confirmBox.click(async function () {
                 confirmBox.attr('disabled', true);
+
+                let load = webToast.loading({
+                    status: 'Loading...',
+                    message: 'Please Wait a moment',
+                    align: 'bottomright',
+                    line: true,
+                });
 
                 let person = {
                     "id": id
                 }
 
-                const reponse = await fetch('http://localhost:3300/persons/' + id, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(person)
-                })
-                refreshData();
+                setTimeout(() => {
+                    $.ajax({
+                        headers: {
+                            'accept': 'application/json',
+                            'content-type': 'application/json'
+                        },
+                        type: 'DELETE',
+                        url: 'http://localhost:3300/persons/' + id,
+                        data: JSON.stringify(person)
+                    })
+                        .done(() => {
 
-                webToast.Success({
-                    status: 'Xóa thành công',
-                    message: '',
-                    delay: 2000,
-                    align: 'topright'
-                });
-                confirmBox.attr('disable', false)
+                            webToast.Success({
+                                status: 'Xóa thành công',
+                                message: '',
+                                delay: 2000,
+                                align: 'topright'
+                            });
+
+                            refreshData();
+
+                        })
+                        .fail((error) => {
+                            console.log(error);
+                        })
+                        .always(() => {
+                            confirmBox.attr('disable', false);
+                            load.remove();
+                        })
+                }, 2000)
+
+                // const reponse = await fetch('http://localhost:3300/persons/' + id, {
+                //     method: 'DELETE',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify(person)
+                // })
+                // refreshData();
+
+                // webToast.Success({
+                //     status: 'Xóa thành công',
+                //     message: '',
+                //     delay: 2000,
+                //     align: 'topright'
+                // });
+                // confirmBox.attr('disable', false);
+
 
             });
 
@@ -540,175 +667,306 @@
 
     const showModalUpdate = () => {
         strBody.on('click', '.edit', async function () {
+            resetForm('#formUpdate');
+
             const id = $(this).data('id');
 
-            const reponse = await fetch('http://localhost:3300/persons/' + id);
-            const person = await reponse.json();
+            return $.ajax({
+                type: 'GET',
+                url: 'http://localhost:3300/persons/' + id,
+                success: function (res) {
+                    $('#idUp').val(res.id);
+                    $('#fullNameUp').val(res.fullName);
+                    $('#emailUp').val(res.email);
+                    $('#phoneUp').val(res.phone);
+                    $('#addressUp').val(res.address);
+                    $('#modalUpdate').modal('show')
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+
+            })
+
+            // const reponse = await fetch('http://localhost:3300/persons/' + id);
+            // const person = await reponse.json();
 
 
-            $('#idUp').val(person.id);
-            $('#fullNameUp').val(person.fullName);
-            $('#emailUp').val(person.email);
-            $('#phoneUp').val(person.phone);
-            $('#addressUp').val(person.address);
-            $('#modalUpdate').modal('show')
+            // $('#idUp').val(person.id);
+            // $('#fullNameUp').val(person.fullName);
+            // $('#emailUp').val(person.email);
+            // $('#phoneUp').val(person.phone);
+            // $('#addressUp').val(person.address);
+            // $('#modalUpdate').modal('show')
         })
     }
 
     const showModalDeposit = () => {
         strBody.on('click', '.deposit', async function () {
-            $('.error-area').empty();
-            $('label.error').empty();
+            resetForm('#formDes');
 
             const id = $(this).data('id');
 
-            const reponse = await fetch('http://localhost:3300/persons/' + id);
-            const person = await reponse.json();
+            return $.ajax({
+                type: 'GET',
+                url: 'http://localhost:3300/persons/' + id,
+                success: function (res) {
+                    idDep.val(res.id);
+                    fullNameDep.val(res.fullName);
+                    emailDep.val(res.email);
+                    balanceDep.val(res.balance);
 
-            formDeposit.trigger('reset');
+                    modalDeposit.modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            })
 
-            idDep.val(person.id);
-            fullNameDep.val(person.fullName);
-            emailDep.val(person.email);
-            balanceDep.val(person.balance);
+            // const reponse = await fetch('http://localhost:3300/persons/' + id);
+            // const person = await reponse.json();
 
-            modalDeposit.modal('show');
+            // formDeposit.trigger('reset');
+
+            // idDep.val(person.id);
+            // fullNameDep.val(person.fullName);
+            // emailDep.val(person.email);
+            // balanceDep.val(person.balance);
+
+            // modalDeposit.modal('show');
         })
     }
 
     const showModalWithdraw = () => {
         strBody.on('click', '.withdraw', async function () {
-            $('.error-area').empty();
-            $('label.error').empty();
-
+            resetForm('#formWdr')
 
             const id = $(this).data('id');
 
-            const reponse = await fetch('http://localhost:3300/persons/' + id);
-            const person = await reponse.json();
+            return $.ajax({
+                type: 'GET',
+                url: 'http://localhost:3300/persons/' + id,
+                success: function (res) {
+                    idWdr.val(res.id);
+                    fullNameWdr.val(res.fullName);
+                    emailWdr.val(res.email);
+                    balanceWdr.val(res.balance);
 
-            formWithdraw.trigger('reset');
+                    modalWithdraw.modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            })
 
-            idWdr.val(person.id);
-            fullNameWdr.val(person.fullName);
-            emailWdr.val(person.email);
-            balanceWdr.val(person.balance);
+            // const reponse = await fetch('http://localhost:3300/persons/' + id);
+            // const person = await reponse.json();
 
-            modalWithdraw.modal('show');
+            // formWithdraw.trigger('reset');
+
+            // idWdr.val(person.id);
+            // fullNameWdr.val(person.fullName);
+            // emailWdr.val(person.email);
+            // balanceWdr.val(person.balance);
+
+            // modalWithdraw.modal('show');
         })
     }
 
     const showModalTransfer = () => {
         strBody.on('click', '.transfer', async function () {
-            $('.error-area').empty();
-            $('label.error').empty();
-            totalAmountTr.val('')
+            resetForm('#formTr');
+            totalAmountTr.val('');
 
             const id = $(this).data('id');
 
-            const senderRes = await fetch('http://localhost:3300/persons/' + id);
-            const sender = await senderRes.json();
+            return $.ajax({
+                type: 'GET',
+                url: 'http://localhost:3300/persons/' + id,
+                success: (res) => {
+                    senderName.val(res.fullName);
+                    senderId.val(res.id);
+                    senderEmail.val(res.email);
+                    senderBalance.val(res.balance);
+                    fee.val(10);
 
-            senderName.val(sender.fullName);
-            senderId.val(sender.id);
-            senderEmail.val(sender.email);
-            senderBalance.val(sender.balance);
-            fee.val(10);
+                    transferAmount.val('');
 
-            transferAmount.val('');
+                    transferAmount.on('change', () => {
+                        let feeTr = parseFloat(fee.val());
+                        let amountTr = parseFloat(transferAmount.val());
+                        let totalAmount = Math.round(amountTr * (1 + feeTr / 100));
+                        totalAmountTr.val(totalAmount);
+                    })
 
-            transferAmount.on('change', () => {
-                let feeTr = parseFloat(fee.val());
-                let amountTr = parseFloat(transferAmount.val());
-                let totalAmount = Math.round(amountTr * (1 + feeTr / 100));
-                totalAmountTr.val(totalAmount);
+                    let filteredRecipient = persons.filter(function (item) {
+                        return item.id !== id;
+                    })
+
+                    selectOptionRecipientStr.empty();
+                    console.log(filteredRecipient);
+
+                    $.each(filteredRecipient, function (index, item) {
+                        let str = renderNameRecipient(item);
+                        selectOptionRecipientStr.append(str);
+                    })
+
+                    modalTransfer.modal('show');
+                },
+                error: (error) => {
+                    console.log(error);
+                }
             })
 
-            let filteredRecipient = persons.filter(function (item) {
-                return item.id !== id;
-            })
+            // const senderRes = await fetch('http://localhost:3300/persons/' + id);
+            // const sender = await senderRes.json();
 
-            selectOptionRecipientStr.empty();
-            console.log(filteredRecipient);
+            // senderName.val(sender.fullName);
+            // senderId.val(sender.id);
+            // senderEmail.val(sender.email);
+            // senderBalance.val(sender.balance);
+            // fee.val(10);
 
-            $.each(filteredRecipient, function (index, item) {
-                let str = renderNameRecipient(item);
-                selectOptionRecipientStr.append(str);
-            })
+            // transferAmount.val('');
 
-            modalTransfer.modal('show');
+            // transferAmount.on('change', () => {
+            //     let feeTr = parseFloat(fee.val());
+            //     let amountTr = parseFloat(transferAmount.val());
+            //     let totalAmount = Math.round(amountTr * (1 + feeTr / 100));
+            //     totalAmountTr.val(totalAmount);
+            // })
+
+            // let filteredRecipient = persons.filter(function (item) {
+            //     return item.id !== id;
+            // })
+
+            // selectOptionRecipientStr.empty();
+            // console.log(filteredRecipient);
+
+            // $.each(filteredRecipient, function (index, item) {
+            //     let str = renderNameRecipient(item);
+            //     selectOptionRecipientStr.append(str);
+            // })
+
+            // modalTransfer.modal('show');
+        })
+    }
+
+    const getPersonById = (id) => {
+        return $.ajax({
+            url: 'http://localhost:3300/persons/' + id
         })
     }
 
     const updatePerson = async () => {
         btnUpdate.attr('disabled', true);
         const id = $('#idUp').val();
-        const res = await fetch('http://localhost:3300/persons/' + id);
-        const personOld = await res.json();
+        // const res = await fetch('http://localhost:3300/persons/' + id);
+        // const personOld = await res.json();
+        let person = {};
+        getPersonById(id).then(async (data) => {
+            person = {
+                "id": id,
+                "fullName": fullNameUp.val(),
+                "email": emailUp.val(),
+                "phone": phoneUp.val(),
+                "address": addressUp.val(),
+                "balance": data.balance
+            }
 
-        let person = {
-            "id": id,
-            "fullName": fullNameUp.val(),
-            "email": emailUp.val(),
-            "phone": phoneUp.val(),
-            "address": addressUp.val(),
-            "balance": personOld.balance
-        }
+            let load = webToast.loading({
+                status: 'Loading...',
+                message: 'Please Wait a moment',
+                align: 'bottomright',
+                line: true,
+            });
 
-        const reponse = await fetch('http://localhost:3300/persons/' + id, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(person)
+            setTimeout(() => {
+                $.ajax({
+                    headers: {
+                        'accept': 'application/json',
+                        'content-type': 'application/json',
+                    },
+                    type: 'PUT',
+                    url: 'http://localhost:3300/persons/' + id,
+                    data: JSON.stringify(person)
+                })
+                    .done(() => {
+                        refreshData();
+
+                        webToast.Success({
+                            status: 'Cập nhật thành công',
+                            message: '',
+                            delay: 2000,
+                            align: 'topright'
+                        })
+
+                    })
+                    .fail((error) => {
+                        console.log(error);
+                    })
+                    .always(() => {
+                        modalUpdate.modal('hide');
+                        btnUpdate.attr('disabled', false);
+                        load.remove();
+                    })
+            }, 2000);
         })
-        refreshData();
-        modalUpdate.modal('hide');
-
-        webToast.Success({
-            status: 'Cập nhật thành công',
-            message: '',
-            delay: 2000,
-            align: 'topright'
-        });
-        tnUpdate.attr('disabled', false);
 
     }
 
     const deposit = async () => {
-        const transactionAmount = transactionAmountDep.val();
-        const balance = parseInt(balanceDep.val()) + parseInt(transactionAmount);
-        let person = {
-            "balance": balance
+        const transactionAmount = parseInt(transactionAmountDep.val());
+        const balance = parseInt(balanceDep.val()) + transactionAmount;
+
+        if (transactionAmount < 10000) {
+            const message = "Số tiến nạp tối thiểu là 10.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        } else if (transactionAmount > 500000000) {
+            const message = "Số tiến nạp tối đa là 500.000.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        } else if (balance > 10000000000) {
+            const message = "Tài khoản của bạn vượt mức giới hạn 10.000.000.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        } else {
+            let person = {
+                "balance": balance
+            }
+
+            const reponse = await fetch('http://localhost:3300/persons/' + idDep.val(), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(person)
+            })
+
+            modalDeposit.modal('hide');
+            refreshData();
+            webToast.Success({
+                status: 'Nạp tiền thành công',
+                message: '',
+                delay: 2000,
+                align: 'topright'
+            });
         }
-
-        const reponse = await fetch('http://localhost:3300/persons/' + idDep.val(), {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(person)
-        })
-
-        modalDeposit.modal('hide');
-        refreshData();
-        webToast.Success({
-            status: 'Nạp tiền thành công',
-            message: '',
-            delay: 2000,
-            align: 'topright'
-        });
 
     }
 
     const withdraw = async () => {
-        const transactionAmount = transactionAmountWdr.val();
-        const balance = parseInt(balanceWdr.val()) - parseInt(transactionAmount);
+        const transactionAmount = parseInt(transactionAmountWdr.val());
+        const balance = parseInt(balanceWdr.val()) - transactionAmount;
 
         if (balance <= 0) {
             const message = "Số tiến trong tài khoản không đủ để rút";
             $('.error-area').empty().append(message).removeClass('hide');
 
+        } else if (transactionAmount < 10000) {
+            const message = "Số tiến rút tối thiểu là 10.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        } else if (transactionAmount > 50000000) {
+            const message = "Số tiến rút tối đa là 50.000.000";
+            $('.error-area').empty().append(message).removeClass('hide');
         } else {
             let person = {
                 "balance": balance
@@ -754,7 +1012,13 @@
         if (balanceSenderNew <= 0) {
             const message = "Tài khoản không đủ tiền để chuyển";
             $('.error-area').empty().append(message).removeClass('hide');
-        } else {
+        } else if(parseFloat(amountTr) < 10000) {
+            const message = "Số tiền chuyển tối thiểu là 10.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        } else if(parseFloat(amountTr) > 100000000) {
+            const message = "Số tiền chuyển tối đa là 100.000.000";
+            $('.error-area').empty().append(message).removeClass('hide');
+        }else {
             const personSender = {
                 "balance": balanceSenderNew
             }
@@ -903,12 +1167,16 @@
         rules: {
             amountDes: {
                 required: true,
-                isNumber: true
+                isNumber: true,
+                max: 100000000,
+                min: 10000
             }
         },
         messages: {
             amountDes: {
-                required: 'Vui lòng nhập tiền giao dịch'
+                required: 'Vui lòng nhập tiền giao dịch',
+                max : "Số tiền nạp tối đa 100.000.000",
+                min: "Số tiền nạp tối thiểu 10.000"
             }
         },
         submitHandler: function () {
@@ -920,12 +1188,16 @@
         rules: {
             amountWdr: {
                 required: true,
-                isNumber: true
+                isNumber: true,
+                max: 20000000,
+                min: 10000
             }
         },
         messages: {
             amountWdr: {
-                required: 'Vui lòng nhập tiền giao dịch'
+                required: 'Vui lòng nhập tiền giao dịch',
+                max : "Số tiền rút tối đa 20.000.000",
+                min: "Số tiền rút tối thiểu 10.000"
             }
         },
         submitHandler: function () {
@@ -937,12 +1209,16 @@
         rules: {
             amountTr: {
                 required: true,
-                isNumber: true
+                isNumber: true,
+                max: 100000000,
+                min: 10000
             }
         },
         messages: {
             amountTr: {
-                required: 'Vui lòng nhập tiền giao dịch'
+                required: 'Vui lòng nhập tiền giao dịch',
+                max : "Số chuyển rút tối đa 100.000.000",
+                min: "Số chuyển rút tối thiểu 10.000"
             }
         },
         submitHandler: function () {
@@ -965,6 +1241,13 @@
         getAllPersons();
     };
 
+    const resetForm = (elem) => {
+        $(elem).trigger('reset');
+        $(`${elem} label.error`).remove();
+        $(`${elem} input`).removeClass('error');
+        $('.error-area').empty()
+    }
+
     $(() => {
 
         getAllPersons();
@@ -979,13 +1262,15 @@
 
         showModalTransfer();
 
-        btnHistory.on('click', () => {
-            strBodyHistory.empty();
-            getAllHistories();
-            modalHistory.modal('show')
-        })
+        // btnHistory.on('click', () => {
+        //     strBodyHistory.empty();
+        //     getAllHistories();
+        //     modalHistory.modal('show')
+        // })
 
         btnShowModalCreate.on('click', () => {
+            // formCreate.validate().resetForm();
+            resetForm('#formCreate');
             modalCreate.modal('show');
         })
 
